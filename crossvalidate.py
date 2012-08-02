@@ -61,23 +61,23 @@ methods.append(delayed(sl.tree.DecisionTreeClassifier))
 methods.append(delayed(sl.naive_bayes.GaussianNB))
 
 # Random Forests.
-for n in [5, 10, 15, 20, 25, 30]:
+for n in [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200]:
     methods.append(delayed(sl.ensemble.RandomForestClassifier)(n_estimators=n))
 
 # Gradient boosting.
-for a in [.0001, .001, .01, .1, .5]:
+for a in [.0001, .001, .01, .1, .5, 1., 5., 10.]:
     methods.append(delayed(sl.ensemble.GradientBoostingClassifier)(learn_rate=a))
 
 # Nearest neighbors.
-for n in [5, 10, 15, 20, 25, 30]:
+for n in [1, 2, 5, 10, 15, 20, 25, 30, 50]:
     methods.append(delayed(sl.neighbors.KNeighborsClassifier)(n_neighbors=n))
 
 # l1-penalized logistic regression
-for c in [10, 25, 50, 100, 250, 500, 1000]:
+for c in [0.1, 0.5, 1, 5, 10, 25, 50, 100, 250, 500, 1000, 2000, 4000]:
     methods.append(delayed(sl.linear_model.LogisticRegression)(C=c, penalty='l1', tol=0.01))
 
 # l2-penalized logistic regression
-for c in [10, 25, 50, 100, 250, 500, 1000]:
+for c in [0.1, 0.5, 1, 5, 10, 25, 50, 100, 250, 500, 1000, 2000, 4000]:
     methods.append(delayed(sl.linear_model.LogisticRegression)(C=c, penalty='l2', tol=0.01))
 
 
@@ -98,9 +98,9 @@ if __name__ == '__main__':
     # Get method and fold from job ID
     if args.k > 0:
         assert args.j < len(methods) * args.k, 'Job ID exceeds number of jobs.'
-    m = int(args.j / len(methods))
+    m = args.j % len(methods)
     assert m < len(methods), 'Method ID exceeds number of methods.'
-    fold = args.j % len(methods)
+    fold = int(args.j / len(methods))
 
     # Load data
     X = np.load(args.dataset)
@@ -112,9 +112,12 @@ if __name__ == '__main__':
     accs, wall = run_method(methods, m, tr, ts, X, y)
 
     # Save to file
-    base = '%s-n%06d-k%03d-m%03d'.format(os.path.splitext(args.dataset.name)[0],
-                                         n, args.k, m)
-    fname = joblib.hashing.hash((args.dataset, methods, args.j))
+    datafname = args.dataset.name.split('/')[-1]        # remove directory
+    base = '{0:s}-k{1:03d}-'.format(
+                os.path.splitext(datafname)[0],
+                args.k
+                )
+    fname = joblib.hashing.hash((args.dataset, methods[m], n, args.k, fold))
     fname = os.path.join('results', base + fname + '.pkl')
     with open(fname, 'w-') as pklfile:
         pickle.dump((accs, wall), pklfile)
