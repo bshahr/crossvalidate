@@ -115,7 +115,7 @@ if __name__ == '__main__':
     base = '%s-n%06d-k%03d-m%03d'.format(os.path.splitext(args.dataset.name)[0],
                                          n, args.k, m)
     fname = joblib.hashing.hash((args.dataset, methods, args.j))
-    fname = os.path.join('data', base + fname + '.pkl')
+    fname = os.path.join('results', base + fname + '.pkl')
     with open(fname, 'w-') as pklfile:
         pickle.dump((accs, wall), pklfile)
 
