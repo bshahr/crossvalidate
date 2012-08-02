@@ -84,6 +84,8 @@ for c in [10, 25, 50, 100, 250, 500, 1000]:
 if __name__ == '__main__':
     import argparse
     import os.path
+    import joblib
+    import cPickle as pickle
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('dataset', type=file, help='dataset to use')
@@ -94,9 +96,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Get method and fold from job ID
+    if args.k > 0:
+        assert args.j < len(methods) * args.k, 'Job ID exceeds number of jobs.'
     m = int(args.j / len(methods))
+    assert m < len(methods), 'Method ID exceeds number of methods.'
     fold = args.j % len(methods)
 
+    # Load data
     X = np.load(args.dataset)
     y = X[:,-1]
     X = X[:,:-1]
@@ -104,11 +110,12 @@ if __name__ == '__main__':
 
     tr, ts = get_cv_indices(n, args.k, fold)
     accs, wall = run_method(methods, m, tr, ts, X, y)
-    # TODO: Generate joblib hash for this dataset/method/fold run
-    # and save (`accs`, `wall`).
 
-
-    # TODO: Move this into a separate script that aggregates the above h5files.
-    fname = '%s-n%06d-k%03d-m%03d'.format(os.path.splitext(args.dataset.name)[0], n, args.k, args.m)
-    np.savez(fname, errs=errs, test=test, train=train, cv=cv)
+    # Save to file
+    base = '%s-n%06d-k%03d-m%03d'.format(os.path.splitext(args.dataset.name)[0],
+                                         n, args.k, m)
+    fname = joblib.hashing.hash((args.dataset, methods, args.j))
+    fname = os.path.join('data', base + fname + '.pkl')
+    with open(fname, 'w-') as pklfile:
+        pickle.dump((accs, wall), pklfile)
 
