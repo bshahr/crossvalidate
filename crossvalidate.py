@@ -53,8 +53,8 @@ methods.append(delayed(sl.svm.SVC)(kernel='poly', degree=2))
 methods.append(delayed(sl.svm.SVC)(kernel='poly', degree=3))
 
 # Misc.
-methods.append(delayed(sl.tree.DecisionTreeClassifier))
-methods.append(delayed(sl.naive_bayes.GaussianNB))
+methods.append(delayed(sl.tree.DecisionTreeClassifier)())
+methods.append(delayed(sl.naive_bayes.GaussianNB)())
 
 # Random Forests.
 for n in [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200]:
