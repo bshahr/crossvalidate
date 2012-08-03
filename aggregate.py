@@ -112,5 +112,8 @@ if __name__ == '__main__':
 
     accs.resize((M, args.k))
     wall.resize((M, args.k))
+    cv = sl.cross_validation.LeaveOneOut(n) if (args.k == 0) else \
+         sl.cross_validation.KFold(n, args.k)
+    fold_size = [len(fold) for _, fold in cv]
 
-    np.savez(base, accs=accs, wall=wall)
+    np.savez(base, accs=accs, wall=wall, fold_size=fold_size)
