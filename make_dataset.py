@@ -14,11 +14,25 @@ def make_dataset(name):
     if name == 'synthetic':
         return sklearn.datasets.make_classification(n_samples=10000, n_features=200,
                                                     n_informative=20, random_state=0)
+
+    if name == 'spambase':
+        data = np.loadtxt('data/spambase.data', delimiter=',')
+        np.random.shuffle(data)
+        X, y = data[:,:-1], data[:,-1]
+        return X, y
+
     if name == 'digits':
         data = sklearn.datasets.load_digits()
         X, y = data.data, data.target
         i = np.random.permutation(X.shape[0])
         return X[i], y[i]
+
+    if name == 'cover-binary':
+        data = np.loadtxt('data/covtype.data', delimiter=',')
+        np.random.shuffle(data)
+        idx = np.nonzero((data[:,-1] == 1) + (data[:,-1] == 2))[0]
+        X, y = data[idx,:-1], data[idx,-1]
+        return X, y
 
     else:
         raise RuntimeError('unknown dataset')
