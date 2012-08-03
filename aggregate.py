@@ -11,6 +11,7 @@ import sklearn as sl
 import itertools
 import joblib
 import os
+from methods_list import make_methods_list
 
 
 #RESULTSPATH = os.environ['PYCROSSVALIDATE_RESULTSPATH'] or 'results'
@@ -71,8 +72,11 @@ if __name__ == '__main__':
 
     accs.resize((M, args.k))
     wall.resize((M, args.k))
+    test = accs.mean(axis=1)
     cv = sl.cross_validation.LeaveOneOut(n) if (args.k == 0) else \
          sl.cross_validation.KFold(n, args.k)
-    fold_size = [len(fold) for _, fold in cv]
+    fold_size = np.array([len(fold) for _, fold in cv])
+    success = int(round(accs * fold_size))
+    failure = fold_size - success
 
-    np.savez(base, accs=accs, wall=wall, fold_size=fold_size)
+    np.savez(base, success=success, failure=failure, test=test, wall=wall)
