@@ -24,6 +24,15 @@ def run_method(method, train, test, X, y, directory, pass_to_hash):
     `pass_to_hash` is a tuple that is passed to joblib's
     hasing function.
     """
+    # Check whether this had already been run
+    fname = joblib.hashing.hash(pass_to_hash)
+    fname = os.path.join(directory, fname + '.pkl')
+    try:
+        with open(fname, 'rb') as pklfile:
+            return None
+    except IOError:
+        pass
+
     clf = run_delayed(method)
 
     start = time()
@@ -31,8 +40,6 @@ def run_method(method, train, test, X, y, directory, pass_to_hash):
     accs = clf.score(X[test], y[test])
     wall = time() - start
 
-    fname = joblib.hashing.hash(pass_to_hash)
-    fname = os.path.join(directory, fname + '.pkl')
     with open(fname, 'wb-') as pklfile:
         pickle.dump((accs, wall), pklfile)
 
