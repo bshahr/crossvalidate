@@ -6,8 +6,6 @@ given dataset and save the results.
 from __future__ import division
 import numpy as np
 
-import sklearn as sl
-
 import itertools
 import joblib
 import os
@@ -44,52 +42,13 @@ def run_method(method, train, test, X, y, directory, pass_to_hash):
         pickle.dump((accs, wall), pklfile)
 
 
-import sklearn.svm
-import sklearn.naive_bayes
-import sklearn.ensemble
-import sklearn.neighbors
-import sklearn.tree
-import sklearn.linear_model
-
-methods = []
-
-# SVMs.
-methods.append(delayed(sl.svm.SVC)(kernel='rbf'))
-methods.append(delayed(sl.svm.SVC)(kernel='linear'))
-methods.append(delayed(sl.svm.SVC)(kernel='poly', degree=2))
-methods.append(delayed(sl.svm.SVC)(kernel='poly', degree=3))
-
-# Misc.
-methods.append(delayed(sl.tree.DecisionTreeClassifier)())
-methods.append(delayed(sl.naive_bayes.GaussianNB)())
-
-# Random Forests.
-for n in [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200]:
-    methods.append(delayed(sl.ensemble.RandomForestClassifier)(n_estimators=n))
-
-# Gradient boosting.
-for a in [.0001, .001, .01, .1, .5, 1., 5., 10.]:
-    methods.append(delayed(sl.ensemble.GradientBoostingClassifier)(learn_rate=a))
-
-# Nearest neighbors.
-for n in [1, 2, 5, 10, 15, 20, 25, 30, 50]:
-    methods.append(delayed(sl.neighbors.KNeighborsClassifier)(n_neighbors=n))
-
-# l1-penalized logistic regression
-for c in [0.1, 0.5, 1, 5, 10, 25, 50, 100, 250, 500, 1000, 2000, 4000]:
-    methods.append(delayed(sl.linear_model.LogisticRegression)(C=c, penalty='l1', tol=0.01))
-
-# l2-penalized logistic regression
-for c in [0.1, 0.5, 1, 5, 10, 25, 50, 100, 250, 500, 1000, 2000, 4000]:
-    methods.append(delayed(sl.linear_model.LogisticRegression)(C=c, penalty='l2', tol=0.01))
-
-
 if __name__ == '__main__':
     import argparse
     import os
     import cPickle as pickle
     import itertools
     import sklearn.cross_validation
+    from methods_list import make_methods_list
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('dataset', type=file, help='dataset to use')
@@ -104,6 +63,9 @@ if __name__ == '__main__':
     X = np.load(args.dataset)
     y = X[:,-1]
     X = X[:,:-1]
+
+    # Make list of methods
+    methods = make_methods_list()
 
     n = args.n if args.n else len(X)
     M = len(methods)
@@ -131,8 +93,8 @@ if __name__ == '__main__':
     b = a + job_batchsize if (args.j < n_jobs-1) else J
 
     # Get cross-validation folds
-    cv = sl.cross_validation.LeaveOneOut(n) if (args.k == 0) else \
-         sl.cross_validation.KFold(n, args.k)
+    cv = sklearn.cross_validation.LeaveOneOut(n) if (args.k == 0) else \
+         sklearn.cross_validation.KFold(n, args.k)
 
     # Setup list of jobs
     jobs = iter(delayed(run_method)(method, train, test, X, y,

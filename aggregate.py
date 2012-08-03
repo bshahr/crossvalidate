@@ -11,52 +11,10 @@ import sklearn as sl
 import itertools
 import joblib
 import os
-from delayed import delayed, run_delayed
-from time import time
 
 
 #RESULTSPATH = os.environ['PYCROSSVALIDATE_RESULTSPATH'] or 'results'
 RESULTSPATH = 'results'
-
-import sklearn.svm
-import sklearn.naive_bayes
-import sklearn.ensemble
-import sklearn.neighbors
-import sklearn.tree
-import sklearn.linear_model
-
-methods = []
-
-# SVMs.
-methods.append(delayed(sl.svm.SVC)(kernel='rbf'))
-methods.append(delayed(sl.svm.SVC)(kernel='linear'))
-methods.append(delayed(sl.svm.SVC)(kernel='poly', degree=2))
-methods.append(delayed(sl.svm.SVC)(kernel='poly', degree=3))
-
-# Misc.
-methods.append(delayed(sl.tree.DecisionTreeClassifier)())
-methods.append(delayed(sl.naive_bayes.GaussianNB)())
-
-# Random Forests.
-for n in [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200]:
-    methods.append(delayed(sl.ensemble.RandomForestClassifier)(n_estimators=n))
-
-# Gradient boosting.
-for a in [.0001, .001, .01, .1, .5, 1., 5., 10.]:
-    methods.append(delayed(sl.ensemble.GradientBoostingClassifier)(learn_rate=a))
-
-# Nearest neighbors.
-for n in [1, 2, 5, 10, 15, 20, 25, 30, 50]:
-    methods.append(delayed(sl.neighbors.KNeighborsClassifier)(n_neighbors=n))
-
-# l1-penalized logistic regression
-for c in [0.1, 0.5, 1, 5, 10, 25, 50, 100, 250, 500, 1000, 2000, 4000]:
-    methods.append(delayed(sl.linear_model.LogisticRegression)(C=c, penalty='l1', tol=0.01))
-
-# l2-penalized logistic regression
-for c in [0.1, 0.5, 1, 5, 10, 25, 50, 100, 250, 500, 1000, 2000, 4000]:
-    methods.append(delayed(sl.linear_model.LogisticRegression)(C=c, penalty='l2', tol=0.01))
-
 
 if __name__ == '__main__':
     import argparse
@@ -73,6 +31,7 @@ if __name__ == '__main__':
 
     # Load data
     X = np.load(args.dataset)
+    methods = make_methods_list()
     n = args.n if args.n else len(X)
     M = len(methods)
 
