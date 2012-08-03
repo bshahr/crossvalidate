@@ -76,7 +76,7 @@ if __name__ == '__main__':
     cv = sl.cross_validation.LeaveOneOut(n) if (args.k == 0) else \
          sl.cross_validation.KFold(n, args.k)
     fold_size = np.array([len(fold) for _, fold in cv])
-    success = int(round(accs * fold_size))
+    success = round(accs * fold_size)
     failure = fold_size - success
 
     np.savez(base, success=success, failure=failure, test=test, wall=wall)
