@@ -13,8 +13,7 @@ from delayed import delayed, run_delayed
 from time import time
 
 
-#RESULTSPATH = os.environ['PYCROSSVALIDATE_RESULTSPATH'] or 'results'
-RESULTSPATH = 'results'
+RESULTS = os.environ.get(['PYCROSSVALIDATE_RESULTS'], 'results')
 
 def run_method(method, train, test, X, y, directory, pass_to_hash):
     """
@@ -81,7 +80,7 @@ if __name__ == '__main__':
                 os.path.splitext(datafname)[0],
                 args.k
                 )
-    directory = os.path.join(RESULTSPATH, base)
+    directory = os.path.join(RESULTS, base)
     try:
         os.mkdir(directory)
     except OSError:
