@@ -14,8 +14,7 @@ import os
 from methods_list import make_methods_list
 
 
-#RESULTSPATH = os.environ['PYCROSSVALIDATE_RESULTSPATH'] or 'results'
-RESULTSPATH = 'results'
+RESULTS = os.environ.get(['PYCROSSVALIDATE_RESULTS'], 'results')
 
 if __name__ == '__main__':
     import argparse
@@ -26,7 +25,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('dataset', type=file, help='dataset to use')
-    parser.add_argument('-n', type=int, help='number of datapoints to use', default=0)
+    parser.add_argument('-n', type=int, help='number of datapoints to use',
+                        default=0)
     parser.add_argument('-k', type=int, help='number of folds', default=0)
     args = parser.parse_args()
 
@@ -42,7 +42,7 @@ if __name__ == '__main__':
                 os.path.splitext(datafname)[0],
                 args.k
                 )
-    directory = os.path.join(RESULTSPATH, base)
+    directory = os.path.join(RESULTS, base)
     try:
         os.chdir(directory)
     except OSError:
@@ -54,8 +54,8 @@ if __name__ == '__main__':
          sl.cross_validation.KFold(n, args.k)
 
     # Setup list of jobs
-    files = iter(joblib.hashing.hash((args.dataset, method, n, args.k, train, test))
-                 + '.pkl'
+    files = iter(joblib.hashing.hash((args.dataset, method, n, args.k,
+                                      train, test)) + '.pkl'
                  for method, (train, test) in itertools.product(methods, cv))
 
     # Open pickles and assign to matrices

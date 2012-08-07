@@ -6,17 +6,23 @@ set.
 
 from __future__ import division
 import numpy as np
+import os
 
 import sklearn.datasets
 import sklearn as sl
 
+
+DATA = os.environ.get(['PYCROSSVALIDATE_DATA'], 'data')
+
 def make_dataset(name):
     if name == 'synthetic':
-        return sklearn.datasets.make_classification(n_samples=10000, n_features=200,
-                                                    n_informative=20, random_state=0)
+        return sklearn.datasets.make_classification(n_samples=10000,
+                                                    n_features=200,
+                                                    n_informative=20,
+                                                    random_state=0)
 
     if name == 'spambase':
-        data = np.loadtxt('data/spambase.data', delimiter=',')
+        data = np.loadtxt(os.path.join(DATA, 'spambase.data'), delimiter=',')
         np.random.shuffle(data)
         X, y = data[:,:-1], data[:,-1]
         return X, y
@@ -28,7 +34,7 @@ def make_dataset(name):
         return X[i], y[i]
 
     if name == 'cover-binary':
-        data = np.loadtxt('data/covtype.data', delimiter=',')
+        data = np.loadtxt(os.path.join(DATA, 'covtype.data'), delimiter=',')
         np.random.shuffle(data)
         idx = np.nonzero((data[:,-1] == 1) + (data[:,-1] == 2))[0]
         X, y = data[idx,:-1], data[idx,-1]
@@ -49,9 +55,9 @@ if __name__ == '__main__':
     X, y = make_dataset(args.dataset)
 
     try:
-        os.mkdir('data')
+        os.mkdir(DATA)
     except:
         pass
 
-    np.save('data/' + args.dataset, np.c_[X, y])
+    np.save(os.path.join(DATA, args.dataset), np.c_[X, y])
 
