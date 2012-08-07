@@ -13,7 +13,7 @@ from delayed import delayed, run_delayed
 from time import time
 
 
-RESULTS = os.environ.get(['PYCROSSVALIDATE_RESULTS'], 'results')
+RESULTS = os.environ.get('PYCROSSVALIDATE_RESULTS', 'results')
 
 def run_method(method, train, test, X, y, directory, pass_to_hash):
     """

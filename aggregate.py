@@ -14,7 +14,7 @@ import os
 from methods_list import make_methods_list
 
 
-RESULTS = os.environ.get(['PYCROSSVALIDATE_RESULTS'], 'results')
+RESULTS = os.environ.get('PYCROSSVALIDATE_RESULTS', 'results')
 
 if __name__ == '__main__':
     import argparse

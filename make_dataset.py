@@ -12,7 +12,7 @@ import sklearn.datasets
 import sklearn as sl
 
 
-DATA = os.environ.get(['PYCROSSVALIDATE_DATA'], 'data')
+DATA = os.environ.get('PYCROSSVALIDATE_DATA', 'data')
 
 def make_dataset(name):
     if name == 'synthetic':
