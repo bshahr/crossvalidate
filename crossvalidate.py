@@ -6,7 +6,6 @@ given dataset and save the results.
 from __future__ import division
 import numpy as np
 
-import itertools
 import joblib
 import os
 from delayed import delayed, run_delayed
@@ -14,22 +13,14 @@ from time import time
 
 
 RESULTS = os.environ.get('PYCROSSVALIDATE_RESULTS', 'results')
+CACHE = os.environ.get('PYCROSSVALIDATE_CACHE', 'cache')
 
-def run_method(method, train, test, X, y, directory, pass_to_hash):
+memory = joblib.Memory(cachedir=CACHE, verbose=0)
+@memory.cache
+def _run_method(method, X, y, train, test):
     """
     Train the `method` on X[train] and test on X[test].
-    `pass_to_hash` is a tuple that is passed to joblib's
-    hasing function.
     """
-    # Check whether this had already been run
-    fname = joblib.hashing.hash(pass_to_hash)
-    fname = os.path.join(directory, fname + '.pkl')
-    try:
-        with open(fname, 'rb') as pklfile:
-            return None
-    except IOError:
-        pass
-
     clf = run_delayed(method)
 
     start = time()
@@ -37,16 +28,35 @@ def run_method(method, train, test, X, y, directory, pass_to_hash):
     accs = clf.score(X[test], y[test])
     wall = time() - start
 
-    with open(fname, 'wb-') as pklfile:
-        pickle.dump((accs, wall), pklfile)
+    return accs, wall
+
+def run_method(method, X, y, train, test, force=False, load=False):
+    """
+    Wrapper around the MemorizedFunc. This allows run_method to be delayed.
+    Parameters:
+        method, X, y, train, test - arguments passed to _run_method;
+        force - boolean to force a rerun with the current arguments;
+        load - boolean to prevent a rerun and only allow loading,
+               ignored if force=True.
+    Returns:
+        accs - accuracy of method on fold `X[test]`;
+        wall - wall time spent in computation.
+    """
+    params = (method, X, y, train, test)
+
+    if force:
+        return _run_method.call(*params)
+    elif load:
+        outdir = _run_method.get_output_dir(*params)
+        return _run_method.load_output(outdir)
+    else:
+        return _run_method(*params)
 
 
 if __name__ == '__main__':
     import argparse
-    import os
-    import cPickle as pickle
     import itertools
-    import sklearn.cross_validation
+    from sklearn.cross_validation import KFold, LeaveOneOut
     from methods_list import make_methods_list
 
     parser = argparse.ArgumentParser(description=__doc__)
@@ -56,12 +66,13 @@ if __name__ == '__main__':
     parser.add_argument('-j', type=int, help='job id to run')
     parser.add_argument('-n', type=int, help='number of datapoints to use', default=0)
     parser.add_argument('-k', type=int, help='number of folds', default=0)
+    parser.add_argument('-a', help='flag to aggregate results', action='store_true')
+    parser.add_argument('-f', help='flag to force recompute', action='store_true')
     args = parser.parse_args()
 
     # Load data
     X = np.load(args.dataset)
-    y = X[:,-1]
-    X = X[:,:-1]
+    X, y = X[:,:-1], X[:,-1]
 
     # Make list of methods
     methods = make_methods_list()
@@ -74,36 +85,47 @@ if __name__ == '__main__':
     if args.j < 0 or args.j >= n_jobs:
         raise ValueError('Job ID out of range.')
 
-    # Create results directory
-    datafname = args.dataset.name.split('/')[-1]        # remove data directory
-    base = '{0:s}-k{1:02d}'.format(
-                os.path.splitext(datafname)[0],
-                args.k
-                )
-    directory = os.path.join(RESULTS, base)
-    try:
-        os.mkdir(directory)
-    except OSError:
-        pass
-
     # Range of jobs to run
     job_batchsize = int(J / n_jobs)
     a = args.j * job_batchsize
     b = a + job_batchsize if (args.j < n_jobs-1) else J
 
     # Get cross-validation folds
-    cv = sklearn.cross_validation.LeaveOneOut(n) if (args.k == 0) else \
-         sklearn.cross_validation.KFold(n, args.k)
+    cv = LeaveOneOut(n) if (args.k == 0) else KFold(n, args.k)
 
     # Setup list of jobs
-    jobs = iter(delayed(run_method)(method, train, test, X, y,
-                                    directory=directory,
-                                    pass_to_hash=(args.dataset, method, n,
-                                                  args.k, train, test))
+    jobs = iter(delayed(run_method)(method, X, y, train, test, force=args.f)
                 for method, (train, test) in itertools.product(methods, cv))
 
     # Run only jobs in batch
     for job in itertools.islice(jobs, a, b):
         run_delayed(job)
 
+    # Aggregate results
+    if args.a:
+        accs = np.empty(M * args.k)
+        wall = np.empty(M * args.k)
+        accs.fill(np.nan)
+        wall.fill(np.nan)
 
+        # Fetch data
+        jobs = iter(delayed(run_method)(method, X, y, train, test, load=True)
+                    for method, (train, test) in itertools.product(methods, cv))
+        for i, jobs in enumerate(jobs):
+            accs[i], wall[i] = run_delayed(job)
+
+        accs.resize((M, args.k))
+        wall.resize((M, args.k))
+        test = accs.mean(axis=1)
+
+        fold_size = np.array([len(fold) for _, fold in cv])
+        success = accs * fold_size
+        failure = fold_size - success
+
+        # Save to `.npz` file
+        datafname = args.dataset.name.split('/')[-1]
+        fname = '{0:s}-k{1:02d}'.format(
+                    os.path.splitext(datafname)[0],
+                    args.k)
+        np.savez(os.path.join(RESULTS, fname),
+                 success=success, failure=failure, test=test, wall=wall)

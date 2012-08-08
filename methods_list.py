@@ -16,7 +16,7 @@ from delayed import delayed
 
 def make_methods_list():
     methods = []
-
+    """
     # SVMs.
     for C in [1e2, 1e3, 1e4]:
         for gamma in [0.01, 0.05, 0.1]:
@@ -30,7 +30,7 @@ def make_methods_list():
     # Misc.
     methods.append(delayed(sl.tree.DecisionTreeClassifier)())
     methods.append(delayed(sl.naive_bayes.GaussianNB)())
-
+    """
     # Random Forests.
     for n in [10, 50, 100, 200, 500]:
         methods.append(delayed(sl.ensemble.RandomForestClassifier)
