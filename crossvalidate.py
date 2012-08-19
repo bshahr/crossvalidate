@@ -47,8 +47,11 @@ def run_method(method, X, y, train, test, force=False, load=False):
     if force:
         return _run_method.call(*params)
     elif load:
-        outdir = _run_method.get_output_dir(*params)
-        return _run_method.load_output(outdir)
+        outdir = _run_method.get_output_dir(*params)[0]
+        try:
+            return _run_method.load_output(outdir)
+        except IOError:
+            return (np.nan, np.nan)
     else:
         return _run_method(*params)
 
@@ -63,7 +66,7 @@ if __name__ == '__main__':
     parser.add_argument('dataset', type=file, help='dataset to use')
     parser.add_argument('--n-jobs', dest='n_jobs', type=int,
                         help='number of total jobs to run', default=0)
-    parser.add_argument('-j', type=int, help='job id to run')
+    parser.add_argument('-j', type=int, help='job id to run', default=0)
     parser.add_argument('-n', type=int, help='number of datapoints to use', default=0)
     parser.add_argument('-k', type=int, help='number of folds', default=0)
     parser.add_argument('-a', help='flag to aggregate results', action='store_true')
@@ -93,16 +96,17 @@ if __name__ == '__main__':
     # Get cross-validation folds
     cv = LeaveOneOut(n) if (args.k == 0) else KFold(n, args.k)
 
-    # Setup list of jobs
-    jobs = iter(delayed(run_method)(method, X, y, train, test, force=args.f)
-                for method, (train, test) in itertools.product(methods, cv))
 
-    # Run only jobs in batch
-    for job in itertools.islice(jobs, a, b):
-        run_delayed(job)
+    if not args.a:
+        # Setup list of jobs
+        jobs = iter(delayed(run_method)(method, X, y, train, test, force=args.f)
+            	    for method, (train, test) in itertools.product(methods, cv))
+        
+        # Run only jobs in batch
+        for job in itertools.islice(jobs, a, b):
+            run_delayed(job)
 
-    # Aggregate results
-    if args.a:
+    else:      # Aggregate results
         accs = np.empty(M * args.k)
         wall = np.empty(M * args.k)
         accs.fill(np.nan)
@@ -111,7 +115,7 @@ if __name__ == '__main__':
         # Fetch data
         jobs = iter(delayed(run_method)(method, X, y, train, test, load=True)
                     for method, (train, test) in itertools.product(methods, cv))
-        for i, jobs in enumerate(jobs):
+        for i, job in enumerate(jobs):
             accs[i], wall[i] = run_delayed(job)
 
         accs.resize((M, args.k))

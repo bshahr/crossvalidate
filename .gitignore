@@ -1,4 +1,7 @@
 *.pyc
+*.pbs.*
 data/
+cache/
+cache-backups/
 results/
 pbs-scripts/
