@@ -1,8 +1,3 @@
-"""
-Run leave-one-out cross-validation for some number of methods on the
-given dataset and save the results.
-"""
-
 from __future__ import division
 import numpy as np
 
@@ -14,6 +9,7 @@ from time import time
 
 RESULTS = os.environ.get('PYCROSSVALIDATE_RESULTS', 'results')
 CACHE = os.environ.get('PYCROSSVALIDATE_CACHE', 'cache')
+
 
 memory = joblib.Memory(cachedir=CACHE, verbose=0)
 @memory.cache
@@ -79,14 +75,14 @@ if __name__ == '__main__':
 
     # Make list of methods
     methods = make_methods_list()
+    M = len(methods)
 
     n = args.n if args.n else len(X)
-    M = len(methods)
     J = args.k * M if args.k else n * M
     n_jobs = min(J, args.n_jobs) if args.n_jobs else J
 
     if args.j < 0 or args.j >= n_jobs:
-        raise ValueError('Job ID out of range.')
+        raise ValueError('Job ID .cvout of range.')
 
     # Range of jobs to run
     job_batchsize = int(J / n_jobs)
@@ -100,8 +96,8 @@ if __name__ == '__main__':
     if not args.a:
         # Setup list of jobs
         jobs = iter(delayed(run_method)(method, X, y, train, test, force=args.f)
-            	    for method, (train, test) in itertools.product(methods, cv))
-        
+                    for method, (train, test) in itertools.product(methods, cv))
+
         # Run only jobs in batch
         for job in itertools.islice(jobs, a, b):
             run_delayed(job)
@@ -128,7 +124,7 @@ if __name__ == '__main__':
 
         # Save to `.npz` file
         datafname = args.dataset.name.split('/')[-1]
-        fname = '{0:s}-k{1:02d}'.format(
+        fname = '{0:s}-k{1:02d}.cv'.format(
                     os.path.splitext(datafname)[0],
                     args.k)
         np.savez(os.path.join(RESULTS, fname),
