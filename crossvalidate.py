@@ -92,7 +92,6 @@ if __name__ == '__main__':
     # Get cross-validation folds
     cv = LeaveOneOut(n) if (args.k == 0) else KFold(n, args.k)
 
-
     if not args.a:
         # Setup list of jobs
         jobs = iter(delayed(run_method)(method, X, y, train, test, force=args.f)
@@ -102,6 +101,7 @@ if __name__ == '__main__':
         for job in itertools.islice(jobs, a, b):
             run_delayed(job)
 
+    """
     else:      # Aggregate results
         accs = np.empty(M * args.k)
         wall = np.empty(M * args.k)
@@ -129,3 +129,4 @@ if __name__ == '__main__':
                     args.k)
         np.savez(os.path.join(RESULTS, fname),
                  success=success, failure=failure, test=test, wall=wall)
+    """

@@ -16,6 +16,12 @@ from delayed import delayed
 
 def make_methods_list():
     methods = []
+    # Nearest neighbors.
+    for n in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]:
+        methods.append(delayed(sl.neighbors.KNeighborsClassifier)
+                              (n_neighbors=n))
+    return methods
+
     """
     # SVMs.
     for C in [1e2, 1e3, 1e4]:
@@ -30,7 +36,7 @@ def make_methods_list():
     # Misc.
     methods.append(delayed(sl.tree.DecisionTreeClassifier)())
     methods.append(delayed(sl.naive_bayes.GaussianNB)())
-    """
+
     # Random Forests.
     for n in [10, 50, 100, 200, 500]:
         methods.append(delayed(sl.ensemble.RandomForestClassifier)
@@ -67,3 +73,4 @@ def make_methods_list():
 
 
     return methods
+    """
